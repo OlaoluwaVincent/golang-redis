@@ -1,6 +1,7 @@
 package services
 
 import (
+	"log"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -39,8 +40,18 @@ func SendToUser(userID string, payload map[string]interface{}) {
 	client, exists := clients[userID]
 	mu.Unlock()
 
-	if exists {
-		client.Conn.WriteJSON(payload)
+	if !exists {
+		log.Printf("User %s not connected", userID)
+		return
+	}
+
+	if err := client.Conn.WriteJSON(payload); err != nil {
+		log.Printf("Failed to send to user %s: %v", userID, err)
+		// Clean up dead connection
+		mu.Lock()
+		delete(clients, userID)
+		mu.Unlock()
+		client.Conn.Close()
 	}
 }
 

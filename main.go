@@ -19,8 +19,8 @@ var upgrader = websocket.Upgrader{
 
 func main() {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "vincent1428",
+		Addr:     "localhost:6379", // Replace with you own docker or local redis
+		Password: "vincent1428",    // Replace with you own docker or local redis :lol you don't need to be told yeah
 		DB:       0,
 	})
 
@@ -30,8 +30,15 @@ func main() {
 	}
 	log.Println("Redis connected:", pong)
 
+	// Start mail worker in background
 	go func() {
-		err := subscriber.StartRedisSubscriber(rdb)
+		if err := subscriber.StartMailWorker(rdb); err != nil {
+			log.Fatal("Mail worker failed:", err)
+		}
+	}()
+
+	go func() {
+		err := subscriber.StartRedisSubscriber(ctx, rdb)
 		if err != nil {
 
 		}
